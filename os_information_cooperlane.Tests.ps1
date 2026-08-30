@@ -2,24 +2,36 @@
 .SYNOPSIS
     Pester tests for os_information_cooperlane.ps1 and its module scripts.
 
+.DESCRIPTION
+    Based on the menu.Tests.ps1 template supplied on Learn, with the function names
+    replaced by the names used in this project and additional out-of-scope input
+    tests added for every function.
+
 .NOTES
     Author : Cooper Lane
-    Run with: Invoke-Pester .\os_information_cooperlane.Tests.ps1
 
-    Two things differ from the supplied template.
+    REQUIRES PESTER 5 OR LATER. Run with:
+        Remove-Module Pester -ErrorAction SilentlyContinue
+        Import-Module Pester -MinimumVersion 5.0.0 -Force
+        Invoke-Pester -Path .\os_information_cooperlane.Tests.ps1 -Output Detailed
 
-    1. The master script is dot-sourced twice on purpose. Pester 4 runs the file
-       body and ignores a file-level BeforeAll, while Pester 5 requires the
-       BeforeAll. Loading the script in both places lets this one file run under
-       either version. Dot-sourcing also imports the modules.
+    Three things differ from the supplied template.
 
-    2. Mocks for commands called from inside a module script must name that module
+    1. The template uses Assert-MockCalled, which Pester 6 removed. Calling it makes
+       PowerShell auto-load the Pester 3.4.0 that ships with Windows, whose Mock and
+       Should then shadow the modern ones and every later test fails. This file uses
+       the current equivalent, Should -Invoke.
+
+    2. The master script is dot-sourced inside BeforeAll, not at the top of the file.
+       Pester 5 and later run the file body during a discovery pass before any test
+       executes, so setup code belongs in BeforeAll. Dot-sourcing also imports the
+       four module scripts.
+
+    3. Mocks for commands called from inside a module script must name that module
        with -ModuleName. A mock created in the test session cannot be seen from
-       inside a module's own scope. The menu functions live in the master script,
-       so their mocks do not need it.
+       inside a module's own scope. Show-Menu and Invoke-OSInformationMenu live in
+       the master script, so their mocks do not need it.
 #>
-
-. (Join-Path -Path $PSScriptRoot -ChildPath 'os_information_cooperlane.ps1')
 
 BeforeAll {
     . (Join-Path -Path $PSScriptRoot -ChildPath 'os_information_cooperlane.ps1')
@@ -40,7 +52,7 @@ Describe "Get-ClientComputerInformation" {
 
     It "Calls Get-ComputerInfo with correct property" {
         Get-ClientComputerInformation -PropertyName 'OsName'
-        Assert-MockCalled Get-ComputerInfo -ModuleName 'Get-ClientComputerInformation' `
+        Should -Invoke Get-ComputerInfo -ModuleName 'Get-ClientComputerInformation' `
             -ParameterFilter { $Property -eq 'OsName' } -Times 1
     }
 
@@ -89,7 +101,7 @@ Describe "Get-AllClientComputerInformation" {
 
     It "Calls Get-ComputerInfo once" {
         Get-AllClientComputerInformation
-        Assert-MockCalled Get-ComputerInfo -ModuleName 'Get-AllClientComputerInformation' -Times 1
+        Should -Invoke Get-ComputerInfo -ModuleName 'Get-AllClientComputerInformation' -Times 1
     }
 
     It "Returns error string on failure" {
@@ -157,7 +169,7 @@ Describe "Show-Menu" {
     It "Displays menu options" {
         Mock Write-Output {}
         Show-Menu
-        Assert-MockCalled Write-Output -Times 10
+        Should -Invoke Write-Output -Times 10
     }
 }
 
@@ -166,7 +178,6 @@ Describe "Invoke-OSInformationMenu" {
     BeforeEach {
         Mock Show-Menu {}
         Mock Write-Output {}
-        Mock Write-Host {}
         Mock Get-ClientComputerInformation { return 'MockedValue' }
         Mock Get-AllClientComputerInformation { return 'AllInfo' }
         Mock Get-RemoteServiceStatus { return 'Running' }
@@ -184,7 +195,7 @@ Describe "Invoke-OSInformationMenu" {
                 if ($script:readHostCalls -eq 1) { return '1' } else { return '9' }
             }
             Invoke-OSInformationMenu
-            Assert-MockCalled Get-ClientComputerInformation -Times 1
+            Should -Invoke Get-ClientComputerInformation -Times 1
         }
 
         It "Handles option 8" {
@@ -193,7 +204,7 @@ Describe "Invoke-OSInformationMenu" {
                 if ($script:readHostCalls -eq 1) { return '8' } else { return '9' }
             }
             Invoke-OSInformationMenu
-            Assert-MockCalled Get-AllClientComputerInformation -Times 1
+            Should -Invoke Get-AllClientComputerInformation -Times 1
         }
 
         It "Handles option 6 by calling the trusted host module" {
@@ -202,7 +213,7 @@ Describe "Invoke-OSInformationMenu" {
                 if ($script:readHostCalls -eq 1) { return '6' } else { return '9' }
             }
             Invoke-OSInformationMenu
-            Assert-MockCalled Get-TrustedHost -Times 1
+            Should -Invoke Get-TrustedHost -Times 1
         }
     }
 
@@ -214,7 +225,7 @@ Describe "Invoke-OSInformationMenu" {
                 if ($script:readHostCalls -eq 1) { return '10' } else { return '9' }
             }
             Invoke-OSInformationMenu
-            Assert-MockCalled Show-Menu -Times 2
+            Should -Invoke Show-Menu -Times 2
         }
 
         It "Prompts again when a letter is entered" {
@@ -223,7 +234,7 @@ Describe "Invoke-OSInformationMenu" {
                 if ($script:readHostCalls -eq 1) { return 'abc' } else { return '9' }
             }
             Invoke-OSInformationMenu
-            Assert-MockCalled Show-Menu -Times 2
+            Should -Invoke Show-Menu -Times 2
         }
 
         It "Prompts again when nothing is entered" {
@@ -232,7 +243,7 @@ Describe "Invoke-OSInformationMenu" {
                 if ($script:readHostCalls -eq 1) { return '' } else { return '9' }
             }
             Invoke-OSInformationMenu
-            Assert-MockCalled Show-Menu -Times 2
+            Should -Invoke Show-Menu -Times 2
         }
 
         It "Prompts again when zero is entered" {
@@ -241,7 +252,7 @@ Describe "Invoke-OSInformationMenu" {
                 if ($script:readHostCalls -eq 1) { return '0' } else { return '9' }
             }
             Invoke-OSInformationMenu
-            Assert-MockCalled Show-Menu -Times 2
+            Should -Invoke Show-Menu -Times 2
         }
 
         It "Does not call a retrieval function on invalid input" {
@@ -250,7 +261,7 @@ Describe "Invoke-OSInformationMenu" {
                 if ($script:readHostCalls -eq 1) { return 'x' } else { return '9' }
             }
             Invoke-OSInformationMenu
-            Assert-MockCalled Get-ClientComputerInformation -Times 0
+            Should -Invoke Get-ClientComputerInformation -Times 0
         }
     }
 
