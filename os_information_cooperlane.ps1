@@ -55,6 +55,9 @@ begin {
         <#
         .SYNOPSIS
             Displays the OS information menu options on screen.
+        .DESCRIPTION
+            Writes the menu heading and the nine selectable options to the output
+            stream. This function performs one task only and returns no data.
         #>
         [CmdletBinding()]
         param()
@@ -86,6 +89,8 @@ begin {
             is a whole number between 1 and 9, and calls the module function that
             matches the selection. Invalid input is rejected and the menu is
             displayed again.
+        .EXAMPLE
+            Invoke-OSInformationMenu
         #>
         [CmdletBinding()]
         param()
@@ -95,34 +100,40 @@ begin {
         while (-not $exitRequested) {
 
             try {
-                Show-Menu
+                # Everything the user sees is piped to Out-Host. Out-Host writes
+                # straight to the console, in step with the Read-Host prompt below.
+                # Write-Output on its own goes to the output stream, which the
+                # PowerShell ISE buffers - that makes each result appear one
+                # selection late in the ISE. Out-Host keeps the order correct in
+                # the ISE and in the Windows command line alike.
+                Show-Menu | Out-Host
                 $userChoice = Read-Host -Prompt 'Please select an option (1-9)'
 
                 # Only a single digit from 1 to 9 is accepted. Letters, blanks,
                 # decimals and numbers such as 10 or 0 all fail this test.
                 if ($userChoice -notmatch '^[1-9]$') {
-                    Write-Output 'Invalid selection. Please enter a whole number between 1 and 9.'
+                    Write-Output 'Invalid selection. Please enter a whole number between 1 and 9.' | Out-Host
                 }
                 else {
                     switch ($userChoice) {
-                        '1' { Write-Output (Get-ClientComputerInformation -PropertyName 'OsName') }
-                        '2' { Write-Output (Get-RemoteServiceStatus) }
+                        '1' { Get-ClientComputerInformation -PropertyName 'OsName' | Out-Host }
+                        '2' { Get-RemoteServiceStatus | Out-Host }
                         '3' {
                             $hardwareProperties = @('CsManufacturer', 'CsModel')
-                            Write-Output (Get-ClientComputerInformation -PropertyName $hardwareProperties)
+                            Get-ClientComputerInformation -PropertyName $hardwareProperties | Out-Host
                         }
-                        '4' { Write-Output (Get-ClientComputerInformation -PropertyName 'CsName') }
-                        '5' { Write-Output (Get-ClientComputerInformation -PropertyName 'CsDomain') }
-                        '6' { Write-Output (Get-TrustedHost) }
-                        '7' { Write-Output (Get-ClientComputerInformation -PropertyName 'OsArchitecture') }
-                        '8' { Write-Output (Get-AllClientComputerInformation) }
+                        '4' { Get-ClientComputerInformation -PropertyName 'CsName' | Out-Host }
+                        '5' { Get-ClientComputerInformation -PropertyName 'CsDomain' | Out-Host }
+                        '6' { Get-TrustedHost | Out-Host }
+                        '7' { Get-ClientComputerInformation -PropertyName 'OsArchitecture' | Out-Host }
+                        '8' { Get-AllClientComputerInformation | Out-Host }
                         '9' { $exitRequested = $true }
                     }
                 }
             }
             catch {
                 # An unexpected error is reported but does not stop the menu.
-                Write-Output "Error: An unexpected error occurred - $($_.Exception.Message)"
+                Write-Output "Error: An unexpected error occurred - $($_.Exception.Message)" | Out-Host
             }
         }
     }

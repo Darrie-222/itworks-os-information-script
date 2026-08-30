@@ -178,6 +178,8 @@ Describe "Invoke-OSInformationMenu" {
     BeforeEach {
         Mock Show-Menu {}
         Mock Write-Output {}
+        # Out-Host is mocked so the menu's display does not clutter the test output.
+        Mock Out-Host {}
         Mock Get-ClientComputerInformation { return 'MockedValue' }
         Mock Get-AllClientComputerInformation { return 'AllInfo' }
         Mock Get-RemoteServiceStatus { return 'Running' }
