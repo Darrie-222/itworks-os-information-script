@@ -16,8 +16,14 @@ function Get-RemoteServiceStatus {
     <#
     .SYNOPSIS
         Retrieves the status of the Windows Remote Management (WinRM) service.
+    .DESCRIPTION
+        Returns the current status of the WinRM service, for example Running or
+        Stopped. On failure the function returns a string beginning with "Error:".
+    .EXAMPLE
+        Get-RemoteServiceStatus
     #>
     [CmdletBinding()]
+    [OutputType([string])]
     param()
 
     try {

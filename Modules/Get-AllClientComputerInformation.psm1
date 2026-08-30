@@ -2,6 +2,10 @@
 .SYNOPSIS
     Module script providing Get-AllClientComputerInformation.
 
+.DESCRIPTION
+    Retrieves every item of information offered by the menu and returns it as a
+    list. Imported by os_information_cooperlane.ps1.
+
 .NOTES
     Author  : Cooper Lane
     Company : ITWorks
@@ -30,6 +34,7 @@ function Get-AllClientComputerInformation {
         Get-AllClientComputerInformation
     #>
     [CmdletBinding()]
+    [OutputType([string])]
     param()
 
     try {

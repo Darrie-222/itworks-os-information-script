@@ -23,8 +23,11 @@ function Get-ClientComputerInformation {
     .PARAMETER PropertyName
         The name or names of the Get-ComputerInfo properties to retrieve, for example
         OsName or CsManufacturer.
+    .EXAMPLE
+        Get-ClientComputerInformation -PropertyName 'OsName'
     #>
     [CmdletBinding()]
+    [OutputType([string], [object])]
     param(
         [Parameter(Mandatory = $true)]
         [ValidateNotNullOrEmpty()]

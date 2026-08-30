@@ -16,8 +16,15 @@ function Get-TrustedHost {
     <#
     .SYNOPSIS
         Retrieves the WinRM client trusted hosts configured on the computer.
+    .DESCRIPTION
+        Reads the WSMan client TrustedHosts setting. An empty setting is a valid
+        result and returns an explanatory message rather than an error. On failure
+        the function returns a string beginning with "Error:".
+    .EXAMPLE
+        Get-TrustedHost
     #>
     [CmdletBinding()]
+    [OutputType([string])]
     param()
 
     try {
